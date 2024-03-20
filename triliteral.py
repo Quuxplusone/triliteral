@@ -6,6 +6,13 @@ import os.path
 import re
 import sys
 
+# Latin has trouble with digraphs: "ushah" means "ušah", not "us-hah",
+# and will be treated that way by the instruction unpacker and
+# when recoding into Hebrew and/or Arabic.
+# To disambiguate a pair of consonants that would otherwise make one
+# digraph, separate them with an ignored character such as "-".
+# Likewise, the recoder will encode Hebrew "צ" into Latin "ts"
+# but Hebrew "טס" into Latin "t-s".
 
 args = argparse.Namespace()
 variables = collections.defaultdict(int)
@@ -16,7 +23,7 @@ LATIN = dict(
         I=10, J=10, Y=10, K=20, L=30, M=40, N=50, S=60, X=60, O=70, F=80, P=80, Ph=80, Ts=90, Tz=90,
         Q=100, R=200, Sh=300, Th=400, K_=500, M_=600, N_=700, P_=800, Ph_=800, Ts_=900, Tz_=900,
     ),
-    vowels={'': 0, 'A': 1, 'E': 1, 'U': 2, 'I': 3},
+    vowels={'': 0, '-': 0, 'A': 1, 'E': 1, 'U': 2, 'I': 3},
     ext='.tlt',
 )
 ARABIC=dict(
@@ -50,12 +57,27 @@ def parse(path):
 
 
 def unpack(word):
-    vowels = script['vowels']
-    vowels_re = r'([^' + ''.join(vowels.keys()) + r'])'
-    parts = re.split(vowels_re, word.upper())
-    root = "".join(parts[1::2])
-    stem = int("".join(str(vowels.get(c[:1], c[:1])) for c in parts[4::-2]), 4)
-    return root, stem
+    values, vowels = script['values'], script['vowels']
+    gotvowel = False
+    root = ''
+    stem = ''
+    word = word.upper()
+    while word:
+        if word[0] in vowels:
+            stem += str(vowels[word[0]])
+            word = word[1:]
+            gotvowel = True
+        else:
+            if not gotvowel:
+                stem += '0'
+            gotvowel = False
+            for i in 3, 2, 1:
+                c = word[:i].title()
+                if c in values:
+                    break
+            root += ('-' if root else '') + c.upper()
+            word = word[i:]
+    return root, int(stem[::-1], 4)
 
 
 def gem(word):
@@ -63,6 +85,9 @@ def gem(word):
     word = word.upper() + '_'
     values = script['values']
     while word and word != '_':
+        if word[0] == '-':
+            word = word[1:]
+            continue
         for i in 3, 2, 1:
             c = word[:i].title()
             if c in values:
@@ -93,28 +118,78 @@ def recode(word, to):
     out = ''
     sv, sw = script['values'], script['vowels']
     tv, tw = to['values'], to['vowels']
-    word = ''.join(c for c in word.upper() if c in sv) + '_'
+    word = word.upper() + '_'
     while word and word != '_':
         for i in 3, 2, 1:
             c = word[:i].title()
             if c in sv:
                 break
         word = word[i:]
-        x = sv[c]
-        y = sw.get(c, 0)
-        try:
-            out += next(k for k, v in tv.items() if v == x and tw.get(k, 0) == y)
-        except StopIteration:
-            raise Exception(f"can't recode '{c}' to {args.recode}")
+        if (c in sv) and (c != '-'):
+            x = sv[c]
+            y = sw.get(c, 0)
+            try:
+                recoded = next(k for k, v in tv.items() if v == x and tw.get(k, 0) == y)
+                if len(out) and (out[-1] + recoded).title() in tv:
+                    out += '-'
+                out += recoded.lower()
+            except StopIteration:
+                raise Exception(f"can't recode '{c}' to {args.recode}")
     return out
+
 
 def recode_to_code(word):
     root, stem = unpack(word)
     op = OPS[stem]
-    if (len(root) == 3) and (op is not None):
+    if (root.count('-') == 2) and (op is not None):
         return '(%s %s)' % (op.__name__.upper().strip('_'), root.lower())
     else:
         return '(%d)' % gem(word)
+
+def test_recode():
+    global script
+    script = LATIN
+    assert recode_to_code('tsc') == '(98)'
+    assert recode_to_code('itst') == '(109)'
+    assert recode_to_code('it-st') == '(WITH t-s-t)'
+    assert recode_to_code('utasat') == '(NOT t-s-t)'
+    assert recode_to_code('atust') == '(MUL t-s-t)'
+    assert recode_to_code('utsat') == '(106)'
+    assert recode_to_code('ut-sat') == '(EQ t-s-t)'
+
+    assert recode('tsc', HEBREW) == 'צח'
+    assert recode('itst', HEBREW) == 'יצט'
+    assert recode('it-st', HEBREW) == 'יטסט'
+    assert recode('utasat', HEBREW) == 'וטאסאט'
+    assert recode('atust', HEBREW) == 'אטוסט'
+    assert recode('utsat', HEBREW) == 'וצאט'
+    assert recode('ut-sat', HEBREW) == 'וטסאט'
+
+    script = HEBREW
+    assert recode_to_code('צח') == '(98)'
+    assert recode_to_code('יצט') == '(109)'
+    assert recode_to_code('יטסט') == '(WITH ט-ס-ט)'
+    assert recode_to_code('יצסט') == '(WITH צ-ס-ט)'
+    assert recode_to_code('וטאסאט') == '(NOT ט-ס-ט)'
+    assert recode_to_code('וצאסאט') == '(NOT צ-ס-ט)'
+    assert recode_to_code('אטוסט') == '(MUL ט-ס-ט)'
+    assert recode_to_code('אצוסט') == '(MUL צ-ס-ט)'
+    assert recode_to_code('וצאט') == '(106)'
+    assert recode_to_code('וטסאט') == '(EQ ט-ס-ט)'
+    assert recode_to_code('וצסאט') == '(EQ צ-ס-ט)'
+
+    assert recode('צח', LATIN) == 'tsc'
+    assert recode('יצט', LATIN) == 'itst'
+    assert recode('יטסט', LATIN) == 'it-st'
+    assert recode('יצסט', LATIN) == 'itsst'
+    assert recode('וטאסאט', LATIN) == 'utasat'
+    assert recode('וצאסאט', LATIN) == 'utsasat'
+    assert recode('אטוסט', LATIN) == 'atust'
+    assert recode('אצוסט', LATIN) == 'atsust'
+    assert recode('וצאט', LATIN) == 'utsat'
+    assert recode('וטסאט', LATIN) == 'ut-sat'
+    assert recode('וצסאט', LATIN) == 'utssat'
+
 
 class State:
     def __init__(self, program):
@@ -169,7 +244,7 @@ def store(state):
 
 
 def swap(state):
-    state.vs[root], state.vs[state.wv or state.root] = state.get2()
+    state.vs[state.root], state.vs[state.wv or state.root] = state.get2()
 
 
 def cat(state):
@@ -392,4 +467,5 @@ def main():
 
 
 if __name__ == "__main__":
+    test_recode()
     main()
