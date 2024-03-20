@@ -66,9 +66,9 @@ def gem(word):
         for i in 3, 2, 1:
             c = word[:i].title()
             if c in values:
+                acc += values[c]
                 break
         word = word[i:]
-        acc += values[c]
     return acc
 
 
@@ -108,6 +108,13 @@ def recode(word, to):
             raise Exception(f"can't recode '{c}' to {args.recode}")
     return out
 
+def recode_to_code(word):
+    root, stem = unpack(word)
+    op = OPS[stem]
+    if (len(root) == 3) and (op is not None):
+        return '(%s %s)' % (op.__name__.upper().strip('_'), root.lower())
+    else:
+        return '(%d)' % gem(word)
 
 class State:
     def __init__(self, program):
@@ -323,6 +330,18 @@ OPS = [
 ] + [None, None, None, None] * 8
 
 
+def recode_to_code_p(program):
+    out = sys.stdout
+    line = []
+    for word in program:
+        w = recode_to_code(word)
+        if len(' '.join(line + [w])) > 120:
+            out.write(' '.join(line) + '\n')
+            line = []
+        line += [w]
+    out.write(' '.join(line) + '\n')
+
+
 def recode_p(program, base):
     to = {'arabic': ARABIC, 'hebrew': HEBREW, 'latin': LATIN}[args.recode]
     with open(base + to['ext'], 'w') as out:
@@ -348,15 +367,19 @@ def run(path):
     program = parse(path)
     if args.recode:
         recode_p(program, base)
-        return
-    State(program).eval()
+    elif args.show:
+        recode_to_code_p(program)
+    else:
+        State(program).eval()
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("script")
-    parser.add_argument("--recode", choices=['arabic', 'hebrew', 'latin'])
-    parser.add_argument("--trace", action='store_true')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--show", action='store_true')
+    group.add_argument("--recode", choices=['arabic', 'hebrew', 'latin'])
+    group.add_argument("--trace", action='store_true')
     parser.parse_args(namespace=args)
     run(args.script)
 
