@@ -129,7 +129,7 @@ def recode(word, to):
             x = sv[c]
             y = sw.get(c, 0)
             try:
-                recoded = next(k for k, v in tv.items() if v == x and tw.get(k, 0) == y)
+                recoded = next(k for k, v in tv.items() if v == x and tw.get(k, 0) == y).strip('_')
                 if len(out) and (out[-1] + recoded).title() in tv:
                     out += '-'
                 out += recoded.lower()
@@ -156,6 +156,9 @@ def test_recode():
     assert recode_to_code('atust') == '(MUL t-s-t)'
     assert recode_to_code('utsat') == '(106)'
     assert recode_to_code('ut-sat') == '(EQ t-s-t)'
+    assert recode_to_code('inumm') == '(MOD n-m-m)'
+    assert recode_to_code('askp') == '(QUOT s-k-p)'
+    assert recode_to_code('it-sp') == '(WITH t-s-p)'
 
     assert recode('tsc', HEBREW) == 'צח'
     assert recode('itst', HEBREW) == 'יצט'
@@ -164,6 +167,9 @@ def test_recode():
     assert recode('atust', HEBREW) == 'אטוסט'
     assert recode('utsat', HEBREW) == 'וצאט'
     assert recode('ut-sat', HEBREW) == 'וטסאט'
+    assert recode('inumm', HEBREW) == 'ינומם'
+    assert recode('askp', HEBREW) == 'אסכף'
+    assert recode('it-sp', HEBREW) == 'יטסף'
 
     script = HEBREW
     assert recode_to_code('צח') == '(98)'
@@ -177,6 +183,9 @@ def test_recode():
     assert recode_to_code('וצאט') == '(106)'
     assert recode_to_code('וטסאט') == '(EQ ט-ס-ט)'
     assert recode_to_code('וצסאט') == '(EQ צ-ס-ט)'
+    assert recode_to_code('ינומם') == '(MOD נ-מ-ם)'
+    assert recode_to_code('אסכף') == '(QUOT ס-כ-ף)'
+    assert recode_to_code('יטסף') == '(WITH ט-ס-ף)'
 
     assert recode('צח', LATIN) == 'tsc'
     assert recode('יצט', LATIN) == 'itst'
@@ -189,6 +198,9 @@ def test_recode():
     assert recode('וצאט', LATIN) == 'utsat'
     assert recode('וטסאט', LATIN) == 'ut-sat'
     assert recode('וצסאט', LATIN) == 'utssat'
+    assert recode('ינומם', LATIN) == 'inumm'
+    assert recode('אסכף', LATIN) == 'askp'
+    assert recode('יטסף', LATIN) == 'it-sp'
 
 
 class State:
