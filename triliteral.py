@@ -65,7 +65,7 @@ def unpack(word):
     gotvowel = False
     root = ''
     stem = ''
-    word = word.upper()
+    word = word.replace('ـ', '').upper()
     while word:
         if word[0] in vowels:
             stem += str(vowels[word[0]])
@@ -86,7 +86,7 @@ def unpack(word):
 
 def gem(word):
     acc = 0
-    word = word.upper() + '_'
+    word = word.replace('ـ', '').upper() + '_'
     values = script['values']
     while word and word != '_':
         if word[0] == '-':
@@ -449,9 +449,42 @@ def justify_with_spaces(ww, linelen):
     return [' ' * spaces(i) + w for i, w in enumerate(ww)]
 
 
+def justify_with_tatwil(ww, linelen):
+    # This function is extremely incorrect; it doesn't take word breaks into account,
+    # doesn't prioritize the places to add tatwil, etc.
+    # See https://www.khtt.net/en/page/1821/the-big-kashida-secret
+    unjustified_line = ' '.join(ww)
+    x = linelen - len(unjustified_line)
+    placements = set([
+        # 2. after a non-final SEEN or SAD
+        i + 1 for i, c in enumerate(unjustified_line) if c in ['س', 'ص']
+    ] + [
+        # 3. before a final TEH MARBUTA, HAH, DAL
+        i for i, c in enumerate(unjustified_line) if c in ['ﺔ', 'ﻪ', 'ﺪ'] or c in ['ة', 'ح', 'د']
+    ] + [
+        # 4. before a final ALEF, TEH, LAM, KAF, QAF
+        i for i, c in enumerate(unjustified_line) if c in ['ﺎ', 'ـت', 'ﻞ', 'ﻚ', 'ﻖ'] or c in ['ا', 'ت', 'ل', 'ك', 'ق']
+    ] + [
+        # 5. before the preceding medial BEH of REH, YEH, ALEF MAKSURA
+        i for i, c in enumerate(unjustified_line) if c in ['', '', '']
+    ] + [
+        # 6. before final WAW, AIN, QAF, FEH
+        i for i, c in enumerate(unjustified_line) if c in ['ﻮ', 'ﻊ', 'ﻖ', 'ﻒ'] or c in ['و', 'ع', 'ق', 'ف']
+    ] + [
+        # 7. before final form of other characters that can be connected.
+    ])
+    placements -= set([0, len(unjustified_line)])
+    placements = sorted(placements)
+    indices = zip([0] + placements, placements + [len(unjustified_line)])
+    ww = [unjustified_line[i:j] for i, j in indices]
+    q, r = divmod(x, len(ww) - 1)
+    justified_line = ''.join([w + 'ـ' * (q + 1 if i <= r else q) for i, w in enumerate(ww)])
+    return justified_line.split(' ')
+
+
 def recode_p(program, base):
     to = {'arabic': ARABIC, 'hebrew': HEBREW, 'latin': LATIN}[args.recode]
-    justify_line = justify_with_spaces
+    justify_line = justify_with_tatwil if (to is ARABIC) else justify_with_spaces
     if args.justify is False:
         justify_line = (lambda ww, _: ww)
     with open(base + to['ext'], 'w') as out:
