@@ -342,7 +342,7 @@ def recode_to_code_p(program):
     out.write(' '.join(line) + '\n')
 
 
-def justify_line(ww, linelen):
+def justify_with_spaces(ww, linelen):
     x = linelen - len(' '.join(ww))
     q, r = divmod(x, len(ww) - 1)
     def spaces(i):
@@ -352,6 +352,9 @@ def justify_line(ww, linelen):
 
 def recode_p(program, base):
     to = {'arabic': ARABIC, 'hebrew': HEBREW, 'latin': LATIN}[args.recode]
+    justify_line = justify_with_spaces
+    if args.justify is False:
+        justify_line = (lambda ww, _: ww)
     with open(base + to['ext'], 'w') as out:
         line = []
         for word in program:
@@ -382,7 +385,8 @@ def main():
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--show", action='store_true')
     group.add_argument("--recode", choices=['arabic', 'hebrew', 'latin'])
-    group.add_argument("--trace", action='store_true')
+    parser.add_argument("--trace", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--justify", action=argparse.BooleanOptionalAction)
     parser.parse_args(namespace=args)
     run(args.script)
 
