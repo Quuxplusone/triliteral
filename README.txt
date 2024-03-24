@@ -1,5 +1,5 @@
 Triliteral (Arabic: <ثلاثي>, Hebrew: <תלת>) is a literate, polyglossal, esoteric, homoiconic, concatenative, self-modifying, Turing-complete language inspired by the *triliteral root* construction common to Semitic languages.
-Triliteral programs can be written in the Arabic, Hebrew or (with some loss of fidelity) Latin scripts, though only one at a time; the script used is determined by the file extension: .ثلث, .תלת or .trl.
+Triliteral programs can be written in the Arabic, Hebrew or (with some loss of fidelity) Latin scripts, though only one at a time; the script used is determined by the file extension: .ثلث, .תלת or .tlt.
 
 A Triliteral program is a sequence of *words*, separated by whitespace and/or punctuation, where each word is derived from a (usually tri-)consonantal *root* designating a *variable*, modified by a vowel *stem* designating an *operation*, each consonant having a preceding vowel.
 The number of available consonants (and thus the number of variables) depends on the script used, with Triliteral written in Arabic having 25 consonants (hamza not considered a letter) available, Hebrew 18 and Latin 22; in the Semitic scripts these are the letters other than the *matres lectrionis*, whereas in Latin they are the letters other than certain vowels.
@@ -12,7 +12,7 @@ Words also have a *numeric* value when used as the object of arithmetic operatio
 Words may have more or fewer than 3 consonants, subject to implementation limits.
 Consecutive long vowels are permitted but only the first in each position contribute to the stem; any following contribute only to gematria.
 For example, *gematria* is parsed as *-GeMaT(ria)* i.e. root *GMT* and stem *-ea*, where *-* designates an empty position.
-The observant will note that this means that any text (for example, this document) can be parsed as a Triliteral program, and that any positive number can be entered; however, Triliteral implementations are required only to support values up to the largest that can be entered with 3 vowels and consonants; for example, *ithithitz* in Latin script (gematria 1630); likewise יציציץ (1110) in Hebrew and ﻱﻍﻱﻍﻱﻍ (3030) in Arabic.
+The observant will note that this means that any text (for example, this document) can be parsed as a Triliteral program, and that any positive number can be entered; however, Triliteral implementations are required only to support values up to the largest that can be entered with 3 vowels and consonants; for example, *ithithitz* in Latin script (gematria 1630); likewise יציציץ (1110) in Hebrew and يغيغيغ (3030) in Arabic.
 
 Source is tokenized into words, which occupy a 0-indexed, bounded array.
 Data elements are Triliteral words, or the empty word.

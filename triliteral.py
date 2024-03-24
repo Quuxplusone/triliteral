@@ -21,6 +21,7 @@ import sys
 args = argparse.Namespace()
 variables = collections.defaultdict(int)
 script = None
+
 LATIN = dict(
     values=dict(
         A=1, B=2, G=3, D=4, H=5, E=5, U=6, V=6, W=6, Z=7, C=8, Ch=8, T=9,
@@ -157,6 +158,7 @@ def test_recode():
     assert recode_to_code('itst') == '(109)'
     assert recode_to_code('it-st') == '(WITH t-s-t)'
     assert recode_to_code('utasat') == '(NOT t-s-t)'
+    assert recode_to_code('utsasat') == '(NOT ts-s-t)'
     assert recode_to_code('atust') == '(MUL t-s-t)'
     assert recode_to_code('utsat') == '(106)'
     assert recode_to_code('ut-sat') == '(EQ t-s-t)'
@@ -170,16 +172,29 @@ def test_recode():
     assert recode('itst', HEBREW) == 'יצט'
     assert recode('it-st', HEBREW) == 'יטסט'
     assert recode('utasat', HEBREW) == 'וטאסאט'
+    assert recode('utsasat', HEBREW) == 'וצאסאט'
     assert recode('atust', HEBREW) == 'אטוסט'
     assert recode('utsat', HEBREW) == 'וצאט'
     assert recode('ut-sat', HEBREW) == 'וטסאט'
     assert recode('inumm', HEBREW) == 'ינומם'
     assert recode('askp', HEBREW) == 'אסכף'
     assert recode('it-sp', HEBREW) == 'יטסף'
-
-    # "S" and "X" both encode to "ס".
     assert recode('itxs', HEBREW) == 'יטסס'
     assert recode('itxx', HEBREW) == 'יטסס'
+
+    assert recode('tsc', ARABIC) == 'صح'
+    assert recode('itst', ARABIC) == 'يصط'
+    assert recode('it-st', ARABIC) == 'يطسط'
+    assert recode('utasat', ARABIC) == 'وطاساط'
+    assert recode('utsasat', ARABIC) == 'وصاساط'
+    assert recode('atust', ARABIC) == 'اطوسط'
+    assert recode('utsat', ARABIC) == 'وصاط'
+    assert recode('ut-sat', ARABIC) == 'وطساط'
+    assert recode('inumm', ARABIC) == 'ينومخ'
+    assert recode('askp', ARABIC) == 'اسكض'
+    assert recode('it-sp', ARABIC) == 'يطسض'
+    assert recode('itxs', ARABIC) == 'يطسس'
+    assert recode('itxx', ARABIC) == 'يطسس'
 
     script = HEBREW
     assert recode_to_code('צח') == '(98)'
@@ -197,6 +212,7 @@ def test_recode():
     assert recode_to_code('אסכף') == '(QUOT ס-כ-ף)'
     assert recode_to_code('יטסף') == '(WITH ט-ס-ף)'
     assert recode_to_code('יטסס') == '(WITH ט-ס-ס)'
+    assert recode_to_code('יציציץ') == '(1110)'
 
     assert recode('צח', LATIN) == 'tsc'
     assert recode('יצט', LATIN) == 'itst'
@@ -213,6 +229,35 @@ def test_recode():
     assert recode('אסכף', LATIN) == 'askp'
     assert recode('יטסף', LATIN) == 'it-sp'
     assert recode('יטסס', LATIN) == 'it-ss'
+    assert recode('יציציץ', LATIN) == 'itsitsits'
+
+    script = ARABIC
+    assert recode_to_code('صح') == '(98)'
+    assert recode_to_code('يصط') == '(109)'
+    assert recode_to_code('يطسط') == '(WITH ط-س-ط)'
+    assert recode_to_code('وطاساط') == '(NOT ط-س-ط)'
+    assert recode_to_code('وصاساط') == '(NOT ص-س-ط)'
+    assert recode_to_code('اطوسط') == '(MUL ط-س-ط)'
+    assert recode_to_code('وصاط') == '(106)'
+    assert recode_to_code('وطساط') == '(EQ ط-س-ط)'
+    assert recode_to_code('ينومخ') == '(MOD ن-م-خ)'
+    assert recode_to_code('اسكض') == '(QUOT س-ك-ض)'
+    assert recode_to_code('يطسض') == '(WITH ط-س-ض)'
+    assert recode_to_code('يطسس') == '(WITH ط-س-س)'
+    assert recode_to_code('يغيغيغ') == '(3030)'
+
+    assert recode('صح', LATIN) == 'tsc'
+    assert recode('يصط', LATIN) == 'itst'
+    assert recode('يطسط', LATIN) == 'it-st'
+    assert recode('وطاساط', LATIN) == 'utasat'
+    assert recode('وصاساط', LATIN) == 'utsasat'
+    assert recode('اطوسط', LATIN) == 'atust'
+    assert recode('وصاط', LATIN) == 'utsat'
+    assert recode('وطساط', LATIN) == 'ut-sat'
+    assert recode('ينومخ', LATIN) == 'inumm'
+    assert recode('اسكض', LATIN) == 'askp'
+    assert recode('يطسض', LATIN) == 'it-sp'
+    assert recode('يطسس', LATIN) == 'it-ss'
 
 
 class State:
