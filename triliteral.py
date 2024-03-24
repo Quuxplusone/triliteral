@@ -13,6 +13,10 @@ import sys
 # digraph, separate them with an ignored character such as "-".
 # Likewise, the recoder will encode Hebrew "צ" into Latin "ts"
 # but Hebrew "טס" into Latin "t-s".
+#
+# Also, consider letters that are homophonous in Latin: Latin "s" and "x"
+# both encode into Hebrew "ס". So "t-x-s" and "t-x-x" denote different
+# variables in Latin but denote the same variable "ט-ס-ס" in Hebrew.
 
 args = argparse.Namespace()
 variables = collections.defaultdict(int)
@@ -159,6 +163,8 @@ def test_recode():
     assert recode_to_code('inumm') == '(MOD n-m-m)'
     assert recode_to_code('askp') == '(QUOT s-k-p)'
     assert recode_to_code('it-sp') == '(WITH t-s-p)'
+    assert recode_to_code('itxs') == '(WITH t-x-s)'
+    assert recode_to_code('itxx') == '(WITH t-x-x)'
 
     assert recode('tsc', HEBREW) == 'צח'
     assert recode('itst', HEBREW) == 'יצט'
@@ -170,6 +176,10 @@ def test_recode():
     assert recode('inumm', HEBREW) == 'ינומם'
     assert recode('askp', HEBREW) == 'אסכף'
     assert recode('it-sp', HEBREW) == 'יטסף'
+
+    # "S" and "X" both encode to "ס".
+    assert recode('itxs', HEBREW) == 'יטסס'
+    assert recode('itxx', HEBREW) == 'יטסס'
 
     script = HEBREW
     assert recode_to_code('צח') == '(98)'
@@ -186,6 +196,7 @@ def test_recode():
     assert recode_to_code('ינומם') == '(MOD נ-מ-ם)'
     assert recode_to_code('אסכף') == '(QUOT ס-כ-ף)'
     assert recode_to_code('יטסף') == '(WITH ט-ס-ף)'
+    assert recode_to_code('יטסס') == '(WITH ט-ס-ס)'
 
     assert recode('צח', LATIN) == 'tsc'
     assert recode('יצט', LATIN) == 'itst'
@@ -201,6 +212,7 @@ def test_recode():
     assert recode('ינומם', LATIN) == 'inumm'
     assert recode('אסכף', LATIN) == 'askp'
     assert recode('יטסף', LATIN) == 'it-sp'
+    assert recode('יטסס', LATIN) == 'it-ss'
 
 
 class State:
