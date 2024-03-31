@@ -63,6 +63,3 @@ If there is not a preceding WITH, both operands are the variable, so e.g. MUL le
 
 In arithmetic, the result word (other than for CAT) is determined by greedy construction, vowels and consonants alternating.
 For example, in Latin script a result of 1024 would be written as *DKQTz*.
-
-For control flow, MARK designates a "home" stack.
-For example, the program *eKTB aKTB a KoTB eKTB SaTaK aSTK a aKaTaB* performs the following: first, *aKTB a KoTB* is pushed to stack KTB; then STK is designated the home stack, then *a* is pushed to STK, then KTB is invoked (from the top) with home stack STK, meaning that references to KTB (the called stack) are replaced by STK (the home stack) in the invocation, so *a* is pushed to STK instead of KTB and addition is likewise performed on STK, the result of this program being to push *B* to STK.
